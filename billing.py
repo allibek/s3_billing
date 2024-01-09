@@ -60,12 +60,18 @@ def get_stat():
                                 if debug:
                                     print(category_name + '_sops: ', df[category_name + '_sops'][0])
                     bucket_usage = rgw.get_bucket(bucket=df['bucket'][0])
+                    if debug:
+                        print('bucket_usage: ', bucket_usage['usage'])
                     if bucket_usage['placement_rule']:
                         df['placement_rule'] = bucket_usage['placement_rule']
-                    if bucket_usage['usage']['rgw.main']['size_kb_actual']:
-                        df['bucket_size_kb_actual'] = bucket_usage['usage']['rgw.main']['size_kb_actual']
-                    if bucket_usage['usage']['rgw.main']['num_objects']:
-                        df['bucket_num_objects'] = bucket_usage['usage']['rgw.main']['num_objects']
+                    if bucket_usage['usage']:
+                        if bucket_usage['usage']['rgw.main']['size_kb_actual']:
+                            df['bucket_size_kb_actual'] = bucket_usage['usage']['rgw.main']['size_kb_actual']
+                        if bucket_usage['usage']['rgw.main']['num_objects']:
+                            df['bucket_num_objects'] = bucket_usage['usage']['rgw.main']['num_objects']
+                    else:
+                        df['bucket_size_kb_actual'] = 0
+                        df['bucket_num_objects'] = 0
                     if debug:
                         print('placement_rule: ', df['placement_rule'][0])
                         print('bucket_size_kb_actual: ', df['bucket_size_kb_actual'][0])
@@ -76,8 +82,7 @@ def get_stat():
     try:
         result_DF.to_sql(name='billing', con=conn, if_exists='append', index=True)
     except Exception as e:
-        result_DF = pd.concat([result_DF, pd.read_sql('SELECT * FROM billing', con=conn)])
-        print(result_DF)
+        result_DF = pd.concat([result_DF, pd.read_sql('SELECT TOP 0 * FROM billing', con=conn)])
         result_DF.to_sql(name='billing', con=conn, if_exists = 'replace', index=True)
         print(e)
     conn.close()
@@ -86,6 +91,10 @@ if __name__ == '__main__':
     try:
         get_stat()
     except Exception as e:
+        if debug:
+           print(e)
         f = open(log_path, 'a')
         f.write(str(e))
         f.close()
+
+
