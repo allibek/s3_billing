@@ -82,9 +82,8 @@ def get_stat():
     try:
         result_DF.to_sql(name='billing', con=conn, if_exists='append', index=True)
     except Exception as e:
-        result_DF = pd.concat([result_DF, pd.read_sql('SELECT TOP 0 * FROM billing', con=conn)])
+        result_DF = pd.concat([result_DF, pd.read_sql('SELECT * FROM billing limit 1', con=conn)])
         result_DF.to_sql(name='billing', con=conn, if_exists = 'replace', index=True)
-        print(e)
     conn.close()
 
 if __name__ == '__main__':
